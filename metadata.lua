@@ -1,5 +1,5 @@
 return {
-	version = '1.01',
+	version = '1.02',
 	updated = '8/06/2023',
-	message = 'quest related kill-aura + highest level possible quests'
+	message = 'fast mode + bug fixes'
 }
