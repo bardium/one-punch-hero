@@ -118,6 +118,21 @@ do
 	end)
 end
 
+local questData = require(knitShared.QuestData)
+local questsInfo = {}
+local quests = {'Highest level possible quest'}
+for i, v in next, questData do
+	if v.Type == 'Enemy' then
+		questsInfo[#questsInfo + 1] = {i, v.Requirements.Level, v.Enemy.Name}
+	end
+end
+table.sort(questsInfo, function(quest1, quest2)
+	return tonumber(quest1[2]) < tonumber(quest2[2])
+end)
+for i = 1, #questsInfo do
+	table.insert(quests, questsInfo[i][1])
+end
+
 do
 	local thread = task.spawn(function()
 		while true do
@@ -129,6 +144,33 @@ do
 						closestMob = mobs:FindFirstChildOfClass('Model')
 						for _, v in next, mobs:GetChildren() do
 							if v:FindFirstChild('Head') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 and (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < (closestMob:GetPivot().Position - client.Character:GetPivot().Position).Magnitude then
+								closestMob = v
+							end
+						end
+					elseif (Options.TargetMobs.Value) == 'Quest mob' then
+						local mobName = 'awfsawdas'
+						pcall(function()
+							if Options.TargetQuest.Value == 'Highest level possible quest' then
+								local highestLevelQuest = 'Thugs'
+								local highestLevel = questsInfo[table.find(quests, highestLevelQuest)][2]
+								for _, quest in next, quests do
+									if questsInfo[table.find(quests, quest) - 1] ~= nil then
+										if questsInfo[table.find(quests, quest) - 1][2] < tonumber(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text) and questsInfo[table.find(quests, quest) - 1][2] > highestLevel then
+											highestLevelQuest = quest
+											highestLevel = questsInfo[table.find(quests, quest) - 1][2]
+										end
+									end
+								end
+								mobName = questsInfo[table.find(quests, highestLevelQuest) - 1 ][3]
+							else
+								if client.Character:IsDescendantOf(workspace) and type(Options.TargetQuest.Value) == 'string' then
+									mobName = questsInfo[table.find(quests, Options.TargetQuest.Value) - 1][3]
+								end
+							end
+						end)
+
+						for _, v in next, mobs:GetChildren() do
+							if v.Name == tostring(mobName) and v:FindFirstChild('Head') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 then
 								closestMob = v
 							end
 						end
@@ -153,27 +195,27 @@ do
 	end)
 end
 
-local questData = require(knitShared.QuestData)
-local questsInfo = {}
-local quests = {}
-for i, v in next, questData do
-	if v.Type == 'Enemy' then
-		questsInfo[#questsInfo + 1] = {i, v.Requirements.Level, v.NPC}
-	end
-end
-table.sort(questsInfo, function(quest1, quest2)
-	return tonumber(quest1[2]) < tonumber(quest2[2])
-end)
-for i = 1, #questsInfo do
-	quests[i] = questsInfo[i][1]
-end
 do
 	local thread = task.spawn(function()
 		while true do
 			task.wait()
 			if ((Toggles.AutoQuests) and (Toggles.AutoQuests.Value)) then
-				if client.Character:IsDescendantOf(workspace) and type(Options.TargetQuest.Value) == 'string' and workspace:FindFirstChild('NPC') and workspace.NPC:FindFirstChild('Quest') and workspace.NPC.Quest:FindFirstChild(questsInfo[table.find(quests, (Options.TargetQuest.Value))][3]) then
-					knitServices.QuestService.RE.GetQuest:FireServer(Options.TargetQuest.Value)
+				if Options.TargetQuest.Value == 'Highest level possible quest' then
+					local highestLevelQuest = 'Thugs'
+					local highestLevel = questsInfo[table.find(quests, highestLevelQuest)][2]
+					for _, quest in next, quests do
+						if questsInfo[table.find(quests, quest) - 1] ~= nil then
+							if questsInfo[table.find(quests, quest) - 1][2] < tonumber(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text) and questsInfo[table.find(quests, quest) - 1][2] > highestLevel then
+								highestLevelQuest = quest
+								highestLevel = questsInfo[table.find(quests, quest) - 1][2]
+							end
+						end
+					end
+					knitServices.QuestService.RE.GetQuest:FireServer(highestLevelQuest)
+				else
+					if client.Character:IsDescendantOf(workspace) and type(Options.TargetQuest.Value) == 'string' then
+						knitServices.QuestService.RE.GetQuest:FireServer(Options.TargetQuest.Value)
+					end
 				end
 			end
 		end
@@ -202,14 +244,24 @@ Tabs.Main = Window:AddTab('Main')
 Tabs.UISettings = Window:AddTab('UI Settings')
 
 Groups.Main = Tabs.Main:AddLeftGroupbox('Main')
-Groups.Main:AddToggle('KillAura', { Text = 'Kill aura', Callback = function()
-	pcall(function()
-		if (#client.Character:FindFirstChildOfClass('Humanoid'):FindFirstChildOfClass('Animator'):GetPlayingAnimationTracks()) <= 1 then
-			virtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, nil)
-			task.wait()
-			virtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, nil)
-		end
-	end)
+Groups.Main:AddToggle('KillAura', { Text = 'Kill aura', Callback = function(killAuraValue)
+	if killAuraValue == true then
+		local weldConstraints = 0
+		pcall(function()
+			for _, v in next, game.Players.LocalPlayer.Character:GetDescendants() do
+				if v:IsA('WeldConstraint') and not v.Name:match('Sheath') then
+					weldConstraints += 1
+				end
+			end
+		end)
+		pcall(function()
+			if ((#client.Character:FindFirstChildOfClass('Humanoid'):FindFirstChildOfClass('Animator'):GetPlayingAnimationTracks()) <= 1) and weldConstraints < 1 then
+				virtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, nil)
+				task.wait()
+				virtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, nil)
+			end
+		end)
+	end
 end
 })
 Groups.Main:AddToggle('TeleportToMobs', { Text = 'Teleport to mob' })
@@ -242,7 +294,7 @@ local function GetMobsString()
 	for i, v in next, MobList do
 		MobList[i] = tostring(v)
 	end
-	local newValues = { 'Closest mob' }
+	local newValues = { 'Quest mob', 'Closest mob' }
 
 	for i, v in next, MobList do
 		newValues[#newValues + 1] = MobList[i]
@@ -258,7 +310,7 @@ Groups.Main:AddDropdown('TargetMobs', {
 	AllowNull = true,
 	Compact = false,
 	Values = GetMobsString(),
-	Default = 'Closest mob'
+	Default = 1
 })
 Groups.Main:AddButton('Update target mobs', function()
 	local TargetMobs = GetMobsString()
@@ -278,8 +330,8 @@ Groups.Main:AddDropdown('TargetQuest', {
 	Default = 1,
 	Callback = function(quest)
 		pcall(function()
-			if questsInfo[table.find(quests, quest)][2] > tonumber(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text) then
-				UI:Notify('Your level is too low for this quest!\nYour level: ' .. tostring(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text) .. '\nQuest level requirement: ' .. tostring(questsInfo[table.find(quests, quest)][2]), 5)
+			if questsInfo[table.find(quests, quest) - 1][2] > tonumber(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text) then
+				UI:Notify('Your level is too low for this quest!\nYour level: ' .. tostring(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text) .. '\nQuest level requirement: ' .. tostring(questsInfo[table.find(quests, quest) - 1][2]), 5)
 				Options.TargetQuest:SetValue(quests[1])
 			end
 		end)
