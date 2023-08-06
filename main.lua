@@ -30,7 +30,7 @@ while true do
 	if typeof(knitServices) ~= 'Instance' then
 		for _, obj in next, repStorage:GetChildren() do
 			if obj.Name == 'Packages' and obj:FindFirstChild('Knit') and obj.Knit:IsA('ModuleScript') then 
-				if obj.Knit:FindFirstChild('Services') and obj.Knit.Services:FindFirstChild('MoveService') and obj.Knit.Services:FindFirstChild('QuestService') and obj.Knit.Services:FindFirstChild('InventoryService') then
+				if obj.Knit:FindFirstChild('Services') and obj.Knit.Services:FindFirstChild('MoveService') and obj.Knit.Services:FindFirstChild('QuestService') and obj.Knit.Services:FindFirstChild('InventoryService') and obj.Knit.Services:FindFirstChild('DataService') then
 					if obj.Knit.Services.MoveService:FindFirstChild('RF') and obj.Knit.Services.QuestService:FindFirstChild('RE') then
 						knitServices = obj.Knit.Services
 					end
@@ -106,7 +106,7 @@ do
 						end
 					end
 					if #closestMobs > 1 then
-						if ((Toggles.FastMode) and (Toggles.FastMode.Value)) then
+						if ((Toggles.KillAuraFastMode) and (Toggles.KillAuraFastMode.Value)) then
 							task.spawn(function()
 								knitServices.MoveService.RF.MoveStart:InvokeServer('M1', closestMobs)
 							end)
@@ -236,6 +236,28 @@ do
 	end)
 end
 
+do
+	local thread = task.spawn(function()
+		while true do
+			task.wait()
+			if ((Toggles.AutoStats) and (Toggles.AutoStats.Value)) then
+				if knitServices.DataService:FindFirstChild('RF') and knitServices.DataService.RF:FindFirstChild('AddStat') then
+					if ((Toggles.AutoStatsFastMode) and (Toggles.AutoStatsFastMode.Value)) then
+						task.spawn(function()
+							knitServices.DataService.RF.AddStat:InvokeServer(Options.TargetStat.Value, '1')
+						end)
+					else
+						knitServices.DataService.RF.AddStat:InvokeServer(Options.TargetStat.Value, '1')
+					end
+				end
+			end
+		end
+	end)
+	table.insert(shared.callbacks, function()
+		pcall(task.cancel, thread)
+	end)
+end
+
 local function addRichText(label)
 	label.TextLabel.RichText = true
 end
@@ -276,7 +298,7 @@ Groups.Main:AddToggle('KillAura', { Text = 'Kill aura', Callback = function(kill
 end
 })
 local killAuraDepBox = Groups.Main:AddDependencyBox()
-killAuraDepBox:AddToggle('FastMode', { Text = 'Fast mode' })
+killAuraDepBox:AddToggle('KillAuraFastMode', { Text = 'Fast mode' })
 killAuraDepBox:SetupDependencies({
 	{ Toggles.KillAura, true }
 });
@@ -324,7 +346,6 @@ end
 
 Groups.Main:AddDropdown('TargetMobs', {
 	Text = 'Target mob',
-	AllowNull = true,
 	Compact = false,
 	Values = GetMobsString(),
 	Default = 1
@@ -341,7 +362,6 @@ Groups.Main:AddSlider('ZOffset', { Text = 'Z position offset', Min = -20, Max = 
 Groups.Main:AddToggle('AutoQuests', { Text = 'Auto quests' })
 Groups.Main:AddDropdown('TargetQuest', {
 	Text = 'Target quest',
-	AllowNull = true,
 	Compact = false,
 	Values = quests,
 	Default = 1,
@@ -353,6 +373,19 @@ Groups.Main:AddDropdown('TargetQuest', {
 			end
 		end)
 	end
+})
+
+Groups.Main:AddToggle('AutoStats', { Text = 'Auto stats' })
+local autoStatsDepBox = Groups.Main:AddDependencyBox()
+autoStatsDepBox:AddToggle('AutoStatsFastMode', { Text = 'Fast mode' })
+autoStatsDepBox:SetupDependencies({
+	{ Toggles.AutoStats, true }
+});
+Groups.Main:AddDropdown('TargetStat', {
+	Text = 'Target stat',
+	Compact = false,
+	Values = {'Strength', 'Defense', 'Stamina', 'Speed'},
+	Default = 1
 })
 
 Groups.Credits = Tabs.UISettings:AddRightGroupbox('Credits')
