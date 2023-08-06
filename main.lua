@@ -98,16 +98,21 @@ do
 		while true do
 			task.wait()
 			if ((Toggles.KillAura) and (Toggles.KillAura.Value)) then
-				if client.Character:IsDescendantOf(workspace) and knitServices.MoveService.RF:FindFirstChild('MoveStart') then
-					local closestMob = nil
-					closestMob = mobs:FindFirstChildOfClass('Model')
+				if client.Character:IsDescendantOf(workspace) and knitServices.MoveService.RF:FindFirstChild('MoveStart') and client.Character.PrimaryPart ~= nil then
+					local closestMobs = {client.Character.PrimaryPart}
 					for _, v in next, mobs:GetChildren() do
-						if v:FindFirstChild('Head') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 and (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < (closestMob:GetPivot().Position - client.Character:GetPivot().Position).Magnitude then
-							closestMob = v
+						if v:FindFirstChild('HumanoidRootPart') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 and (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < 50 then
+							table.insert(closestMobs, v.HumanoidRootPart)
 						end
 					end
-					if closestMob ~= nil and closestMob:IsDescendantOf(mobs) and closestMob:FindFirstChildOfClass('Humanoid') and typeof(closestMob:GetPivot()) == 'CFrame' and typeof(closestMob:GetExtentsSize()) == 'Vector3' and closestMob:FindFirstChild('Head') then
-						knitServices.MoveService.RF.MoveStart:InvokeServer('M1', {closestMob.Head, client.Character.PrimaryPart})
+					if #closestMobs > 1 then
+						if ((Toggles.FastMode) and (Toggles.FastMode.Value)) then
+							task.spawn(function()
+								knitServices.MoveService.RF.MoveStart:InvokeServer('M1', closestMobs)
+							end)
+						else
+							knitServices.MoveService.RF.MoveStart:InvokeServer('M1', closestMobs)
+						end
 					end
 				end
 			end
@@ -143,7 +148,7 @@ do
 					if (Options.TargetMobs.Value) == 'Closest mob' then
 						closestMob = mobs:FindFirstChildOfClass('Model')
 						for _, v in next, mobs:GetChildren() do
-							if v:FindFirstChild('Head') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 and (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < (closestMob:GetPivot().Position - client.Character:GetPivot().Position).Magnitude then
+							if v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 and (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < (closestMob:GetPivot().Position - client.Character:GetPivot().Position).Magnitude then
 								closestMob = v
 							end
 						end
@@ -170,21 +175,27 @@ do
 						end)
 
 						for _, v in next, mobs:GetChildren() do
-							if v.Name == tostring(mobName) and v:FindFirstChild('Head') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 then
+							if v.Name == tostring(mobName) and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 then
 								closestMob = v
 							end
 						end
 					else
 						for _, v in next, mobs:GetChildren() do
-							if v.Name == tostring(Options.TargetMobs.Value) and v:FindFirstChild('Head') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 then
+							if v.Name == tostring(Options.TargetMobs.Value) and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 then
 								closestMob = v
 							end
 						end
 					end
-					if closestMob ~= nil and closestMob:IsDescendantOf(mobs) and closestMob:FindFirstChildOfClass('Humanoid') and typeof(closestMob:GetPivot()) == 'CFrame' and typeof(closestMob:GetExtentsSize()) == 'Vector3' and closestMob:FindFirstChild('Head') then
-						local offset = Vector3.new(Options.XOffset.Value, Options.YOffset.Value, Options.ZOffset.Value)
-						client.Character:PivotTo(CFrame.new(closestMob.Head.Position + offset))
-						client.Character:PivotTo(CFrame.new(closestMob.Head.Position + offset, closestMob.Head.Position))
+					if closestMob ~= nil and closestMob:IsDescendantOf(mobs) and closestMob:FindFirstChildOfClass('Humanoid') and typeof(closestMob:GetPivot()) == 'CFrame' and typeof(closestMob:GetExtentsSize()) == 'Vector3' then
+						if closestMob:FindFirstChild('HumanoidRootPart') then
+							local offset = Vector3.new(Options.XOffset.Value, Options.YOffset.Value, Options.ZOffset.Value)
+							client.Character:PivotTo(CFrame.new(closestMob.HumanoidRootPart.Position + offset))
+							client.Character:PivotTo(CFrame.new(closestMob.HumanoidRootPart.Position + offset, closestMob.HumanoidRootPart.Position))
+						else
+							local offset = Vector3.new(Options.XOffset.Value, Options.YOffset.Value, Options.ZOffset.Value)
+							client.Character:PivotTo(CFrame.new(closestMob:GetPivot().Position + offset))
+							client.Character:PivotTo(CFrame.new(closestMob:GetPivot().Position + offset, closestMob:GetPivot().Position))
+						end
 					end
 				end
 			end
@@ -264,12 +275,18 @@ Groups.Main:AddToggle('KillAura', { Text = 'Kill aura', Callback = function(kill
 	end
 end
 })
+local killAuraDepBox = Groups.Main:AddDependencyBox()
+killAuraDepBox:AddToggle('FastMode', { Text = 'Fast mode' })
+killAuraDepBox:SetupDependencies({
+	{ Toggles.KillAura, true }
+});
+
 Groups.Main:AddToggle('TeleportToMobs', { Text = 'Teleport to mob' })
 local function GetMobsString()
 	local MobList = {}
 
 	for _, v in next, mobs:GetChildren() do
-		if v:IsA('Model') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildWhichIsA('BasePart') and v.Name ~= 'Dummy' then
+		if v:IsA('Model') and v:FindFirstChildOfClass('Humanoid') and v.Name ~= 'Dummy' then
 			table.insert(MobList, v)
 		end
 	end
