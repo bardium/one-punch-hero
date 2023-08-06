@@ -1,5 +1,5 @@
 return {
-	version = '1.02',
+	version = '1.03',
 	updated = '8/06/2023',
-	message = 'fast mode + bug fixes'
+	message = 'auto increase stat points'
 }
