@@ -1,5 +1,5 @@
 return {
-	version = '1.04',
+	version = '1.05',
 	updated = '8/07/2023',
-	message = 'auto use abilities'
+	message = 'show/hide gui'
 }
