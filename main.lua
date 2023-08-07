@@ -487,7 +487,52 @@ Groups.Main:AddDropdown('TargetStat', {
 	Values = {'Strength', 'Defense', 'Stamina', 'Speed'},
 	Default = 1
 })
+Groups.Main:AddDivider()
+local guiNames = {}
+if client:FindFirstChild('PlayerGui') and client.PlayerGui:FindFirstChild('MainUI') and client.PlayerGui.MainUI:FindFirstChild('UIs') then
+	guiNames = client.PlayerGui.MainUI.UIs:GetChildren()
+	table.sort(guiNames, function(guiName1, guiName2)
+		if guiName1:IsA('Frame') and guiName2:IsA('ImageLabel') then
+			return tostring(guiName1) > tostring(guiName2)
+		end
+		if guiName1:IsA('ImageLabel') and guiName2:IsA('Frame') then
+			return tostring(guiName1) < tostring(guiName2)
+		end
+		return tostring(guiName1) < tostring(guiName2)
+	end)
+	for i, v in next, guiNames do
+		guiNames[i] = v.Name
+	end
+end
+Groups.Main:AddDropdown('ShowGui', {
+	Text = 'Show gui',
+	Compact = false,
+	Values = guiNames,
+	AllowNull = true,
+	Callback = function(guiName)
+		pcall(function()
+			if client.PlayerGui.MainUI.UIs:FindFirstChild(guiName) then
+				client.PlayerGui.MainUI.UIs:FindFirstChild(guiName).Position = UDim2.new(0.5, 0, 0.5, 0)
+				client.PlayerGui.MainUI.UIs:FindFirstChild(guiName).Visible = true
+			end
+		end)
+	end
+})
 
+Groups.Main:AddDropdown('HideGui', {
+	Text = 'Hide gui',
+	Compact = false,
+	Values = guiNames,
+	AllowNull = true,
+	Callback = function(guiName)
+		pcall(function()
+			if client.PlayerGui.MainUI.UIs:FindFirstChild(guiName) then
+				client.PlayerGui.MainUI.UIs:FindFirstChild(guiName).Position = UDim2.new(-0.5, 0, 0.5, 0)
+				client.PlayerGui.MainUI.UIs:FindFirstChild(guiName).Visible = true
+			end
+		end)
+	end
+})
 
 Groups.Credits = Tabs.UISettings:AddRightGroupbox('Credits')
 
