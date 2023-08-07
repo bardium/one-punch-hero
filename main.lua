@@ -106,12 +106,49 @@ do
 						end
 					end
 					if #closestMobs > 1 then
-						if ((Toggles.KillAuraFastMode) and (Toggles.KillAuraFastMode.Value)) then
-							task.spawn(function()
-								knitServices.MoveService.RF.MoveStart:InvokeServer('M1', closestMobs)
+						knitServices.MoveService.RF.MoveStart:InvokeServer('M1', closestMobs)
+					end
+				end
+			end
+		end
+	end)
+	table.insert(shared.callbacks, function()
+		pcall(task.cancel, thread)
+	end)
+end
+
+do
+	local thread = task.spawn(function()
+		while true do
+			task.wait()
+			if ((Toggles.AutoAbilities) and (Toggles.AutoAbilities.Value)) then
+				if client.Character:IsDescendantOf(workspace) and knitServices.MoveService.RF:FindFirstChild('MoveStart') and knitServices.MoveService.RF:FindFirstChild('MoveEnd') and client.Character.PrimaryPart ~= nil then
+					local closestMob = nil
+					for _, v in next, mobs:GetChildren() do
+						if v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 then
+							if closestMob == nil then
+								closestMob = v
+							else
+								if (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < (closestMob:GetPivot().Position - client.Character:GetPivot().Position).Magnitude then
+									closestMob = v
+								end
+							end
+						end
+					end
+					if closestMob ~= nil and closestMob:IsDescendantOf(mobs) and closestMob:FindFirstChildOfClass('Humanoid') and typeof(closestMob:GetPivot()) == 'CFrame' then
+						local desiredMove = 'Input' .. tostring(math.random(1, 4))
+						if closestMob:FindFirstChild('HumanoidRootPart') then
+							knitServices.MoveService.RF.MoveStart:InvokeServer(desiredMove, closestMob.HumanoidRootPart.Position)
+							task.wait(.25)
+							pcall(function()
+								knitServices.MoveService.RF.MoveEnd:InvokeServer(desiredMove, closestMob.HumanoidRootPart.Position)
 							end)
 						else
-							knitServices.MoveService.RF.MoveStart:InvokeServer('M1', closestMobs)
+							knitServices.MoveService.RF.MoveStart:InvokeServer(desiredMove, closestMob:GetPivot().Position)
+							task.wait(.25)
+							pcall(function()
+								knitServices.MoveService.RF.MoveEnd:InvokeServer(desiredMove, closestMob:GetPivot().Position)
+							end)
 						end
 					end
 				end
@@ -146,14 +183,20 @@ do
 				if client.Character:IsDescendantOf(workspace) then
 					local closestMob = nil
 					if (Options.TargetMobs.Value) == 'Closest mob' then
-						closestMob = mobs:FindFirstChildOfClass('Model')
+						closestMob = nil
 						for _, v in next, mobs:GetChildren() do
-							if v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 and (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < (closestMob:GetPivot().Position - client.Character:GetPivot().Position).Magnitude then
-								closestMob = v
+							if v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 then
+								if closestMob == nil then
+									closestMob = v
+								else
+									if (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < (closestMob:GetPivot().Position - client.Character:GetPivot().Position).Magnitude then
+										closestMob = v
+									end
+								end
 							end
 						end
 					elseif (Options.TargetMobs.Value) == 'Quest mob' then
-						local mobName = 'awfsawdas'
+						local mobName = 'x'
 						pcall(function()
 							if Options.TargetQuest.Value == 'Highest level possible quest' then
 								local highestLevelQuest = 'Thugs'
@@ -186,7 +229,7 @@ do
 							end
 						end
 					end
-					if closestMob ~= nil and closestMob:IsDescendantOf(mobs) and closestMob:FindFirstChildOfClass('Humanoid') and typeof(closestMob:GetPivot()) == 'CFrame' and typeof(closestMob:GetExtentsSize()) == 'Vector3' then
+					if closestMob ~= nil and closestMob:IsDescendantOf(mobs) and closestMob:FindFirstChildOfClass('Humanoid') and typeof(closestMob:GetPivot()) == 'CFrame' then
 						if closestMob:FindFirstChild('HumanoidRootPart') then
 							local offset = Vector3.new(Options.XOffset.Value, Options.YOffset.Value, Options.ZOffset.Value)
 							client.Character:PivotTo(CFrame.new(closestMob.HumanoidRootPart.Position + offset))
@@ -242,13 +285,7 @@ do
 			task.wait()
 			if ((Toggles.AutoStats) and (Toggles.AutoStats.Value)) then
 				if knitServices.DataService:FindFirstChild('RF') and knitServices.DataService.RF:FindFirstChild('AddStat') then
-					if ((Toggles.AutoStatsFastMode) and (Toggles.AutoStatsFastMode.Value)) then
-						task.spawn(function()
-							knitServices.DataService.RF.AddStat:InvokeServer(Options.TargetStat.Value, '1')
-						end)
-					else
-						knitServices.DataService.RF.AddStat:InvokeServer(Options.TargetStat.Value, '1')
-					end
+					knitServices.DataService.RF.AddStat:InvokeServer(Options.TargetStat.Value, '1')
 				end
 			end
 		end
@@ -280,30 +317,96 @@ Groups.Main = Tabs.Main:AddLeftGroupbox('Main')
 Groups.Main:AddToggle('KillAura', { Text = 'Kill aura', Callback = function(killAuraValue)
 	if killAuraValue == true then
 		local weldConstraints = 0
+		local buttonToPress = 'One'
 		pcall(function()
-			for _, v in next, game.Players.LocalPlayer.Character:GetDescendants() do
+			for _, v in next, client.Character:GetDescendants() do
 				if v:IsA('WeldConstraint') and not v.Name:match('Sheath') then
 					weldConstraints += 1
 				end
 			end
 		end)
 		pcall(function()
-			if ((#client.Character:FindFirstChildOfClass('Humanoid'):FindFirstChildOfClass('Animator'):GetPlayingAnimationTracks()) <= 1) and weldConstraints < 1 then
-				virtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, nil)
+			if ((#client.Character:FindFirstChildOfClass('Humanoid'):FindFirstChildOfClass('Animator'):GetPlayingAnimationTracks()) <= 1) and (weldConstraints < 1) and not client.Character:FindFirstChild('CyborgArm_Left') then
+				for _, v in next, client.PlayerGui.MainUI.Hotbar:GetChildren() do
+					if v:FindFirstChild('Icon') and tostring(v.Icon.Image) ~= '' then
+						local isArmor = false
+						local armorImages = {'14260753286', '14260756951', '14260751556', '14260794023', '14260778199', '14262595536', '14260760723', '12781506160'}
+						local wordMap = {
+							[1] = "One",
+							[2] = "Two",
+							[3] = "Three",
+							[4] = "Four",
+							[5] = "Five"
+						}
+						for _, armor in next, armorImages do
+							if tostring(v.Icon.Image):match(armor) then
+								isArmor = true
+							end
+						end
+						if not isArmor then
+							buttonToPress = wordMap[(tonumber((string.gsub(v.Name, 'Slot', ''))))]
+						end
+					end
+				end
+			end
+		end)
+		pcall(function()
+			if ((#client.Character:FindFirstChildOfClass('Humanoid'):FindFirstChildOfClass('Animator'):GetPlayingAnimationTracks()) <= 1) and (weldConstraints < 1) and not client.Character:FindFirstChild('CyborgArm_Left') then
+				virtualInputManager:SendKeyEvent(true, Enum.KeyCode[buttonToPress], false, nil)
 				task.wait()
-				virtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, nil)
+				virtualInputManager:SendKeyEvent(false, Enum.KeyCode[buttonToPress], false, nil)
 			end
 		end)
 	end
 end
 })
-local killAuraDepBox = Groups.Main:AddDependencyBox()
-killAuraDepBox:AddToggle('KillAuraFastMode', { Text = 'Fast mode' })
-killAuraDepBox:SetupDependencies({
-	{ Toggles.KillAura, true }
-});
+Groups.Main:AddToggle('AutoAbilities', { Text = 'Auto abilities', Callback = function(autoAbilitesValue)
+	if autoAbilitesValue == true then
+		local weldConstraints = 0
+		local buttonToPress = 'One'
+		pcall(function()
+			for _, v in next, client.Character:GetDescendants() do
+				if v:IsA('WeldConstraint') and not v.Name:match('Sheath') then
+					weldConstraints += 1
+				end
+			end
+		end)
+		pcall(function()
+			if ((#client.Character:FindFirstChildOfClass('Humanoid'):FindFirstChildOfClass('Animator'):GetPlayingAnimationTracks()) <= 1) and (weldConstraints < 1) and not client.Character:FindFirstChild('CyborgArm_Left') then
+				for _, v in next, client.PlayerGui.MainUI.Hotbar:GetChildren() do
+					if v:FindFirstChild('Icon') and tostring(v.Icon.Image) ~= '' then
+						local isArmor = false
+						local armorImages = {'14260753286', '14260756951', '14260751556', '14260794023', '14260778199', '14262595536', '14260760723', '12781506160'}
+						local wordMap = {
+							[1] = "One",
+							[2] = "Two",
+							[3] = "Three",
+							[4] = "Four",
+							[5] = "Five"
+						}
+						for _, armor in next, armorImages do
+							if tostring(v.Icon.Image):match(armor) then
+								isArmor = true
+							end
+						end
+						if not isArmor then
+							buttonToPress = wordMap[(tonumber((string.gsub(v.Name, 'Slot', ''))))]
+						end
+					end
+				end
+			end
+		end)
+		pcall(function()
+			if ((#client.Character:FindFirstChildOfClass('Humanoid'):FindFirstChildOfClass('Animator'):GetPlayingAnimationTracks()) <= 1) and (weldConstraints < 1) and not client.Character:FindFirstChild('CyborgArm_Left') then
+				virtualInputManager:SendKeyEvent(true, Enum.KeyCode[buttonToPress], false, nil)
+				task.wait()
+				virtualInputManager:SendKeyEvent(false, Enum.KeyCode[buttonToPress], false, nil)
+			end
+		end)
+	end
+end
+})
 Groups.Main:AddToggle('TeleportToMobs', { Text = 'Teleport to mob' })
-Groups.Main:AddDivider()
 local function GetMobsString()
 	local MobList = {}
 
@@ -377,17 +480,14 @@ Groups.Main:AddDropdown('TargetQuest', {
 })
 Groups.Main:AddDivider()
 Groups.Main:AddToggle('AutoStats', { Text = 'Auto stats' })
-local autoStatsDepBox = Groups.Main:AddDependencyBox()
-autoStatsDepBox:AddToggle('AutoStatsFastMode', { Text = 'Fast mode' })
-autoStatsDepBox:SetupDependencies({
-	{ Toggles.AutoStats, true }
-});
+
 Groups.Main:AddDropdown('TargetStat', {
 	Text = 'Target stat',
 	Compact = false,
 	Values = {'Strength', 'Defense', 'Stamina', 'Speed'},
 	Default = 1
 })
+
 
 Groups.Credits = Tabs.UISettings:AddRightGroupbox('Credits')
 
