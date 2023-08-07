@@ -1,5 +1,5 @@
 return {
-	version = '1.03',
-	updated = '8/06/2023',
-	message = 'auto increase stat points'
+	version = '1.04',
+	updated = '8/07/2023',
+	message = 'auto use abilities'
 }
