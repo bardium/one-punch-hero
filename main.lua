@@ -101,8 +101,8 @@ do
 				if client.Character:IsDescendantOf(workspace) and knitServices.MoveService.RF:FindFirstChild('MoveStart') and client.Character.PrimaryPart ~= nil then
 					local closestMobs = {client.Character.PrimaryPart}
 					for _, v in next, mobs:GetChildren() do
-						if v:FindFirstChild('HumanoidRootPart') and v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 and (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < 50 then
-							table.insert(closestMobs, v.HumanoidRootPart)
+						if v:FindFirstChildOfClass('Humanoid') and v:FindFirstChildOfClass('Humanoid').Health > 0 and (client.Character:GetPivot().Position - v:GetPivot().Position).Magnitude < 50 then
+							table.insert(closestMobs, {Parent = v})
 						end
 					end
 					if #closestMobs > 1 then
@@ -302,8 +302,8 @@ killAuraDepBox:AddToggle('KillAuraFastMode', { Text = 'Fast mode' })
 killAuraDepBox:SetupDependencies({
 	{ Toggles.KillAura, true }
 });
-
 Groups.Main:AddToggle('TeleportToMobs', { Text = 'Teleport to mob' })
+Groups.Main:AddDivider()
 local function GetMobsString()
 	local MobList = {}
 
@@ -355,10 +355,11 @@ Groups.Main:AddButton('Update target mobs', function()
 
 	Options.TargetMobs:SetValues(TargetMobs)
 end)
+Groups.Main:AddDivider()
 Groups.Main:AddSlider('YOffset', { Text = 'Height offset', Min = -20, Max = 20, Default = -7, Suffix = ' studs', Rounding = 1, Compact = true, Tooltip = 'Height offset when teleporting to mobs' })
 Groups.Main:AddSlider('XOffset', { Text = 'X position offset', Min = -20, Max = 20, Default = 0, Suffix = ' studs', Rounding = 1, Compact = true, Tooltip = 'X offset when teleporting to mobs' })
 Groups.Main:AddSlider('ZOffset', { Text = 'Z position offset', Min = -20, Max = 20, Default = 0, Suffix = ' studs', Rounding = 1, Compact = true, Tooltip = 'Z offset when teleporting to mobs' })
-
+Groups.Main:AddDivider()
 Groups.Main:AddToggle('AutoQuests', { Text = 'Auto quests' })
 Groups.Main:AddDropdown('TargetQuest', {
 	Text = 'Target quest',
@@ -374,7 +375,7 @@ Groups.Main:AddDropdown('TargetQuest', {
 		end)
 	end
 })
-
+Groups.Main:AddDivider()
 Groups.Main:AddToggle('AutoStats', { Text = 'Auto stats' })
 local autoStatsDepBox = Groups.Main:AddDependencyBox()
 autoStatsDepBox:AddToggle('AutoStatsFastMode', { Text = 'Fast mode' })
