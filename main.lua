@@ -66,6 +66,8 @@ while true do
     task.wait(1)
 end
 
+local getupvalues = debug.getupvalues or getupvalues;
+
 do
 	if shared._unload then
 		pcall(shared._unload)
@@ -201,9 +203,21 @@ do
 							if Options.TargetQuest.Value == 'Highest level possible quest' then
 								local highestLevelQuest = 'Thugs'
 								local highestLevel = questsInfo[table.find(quests, highestLevelQuest)][2]
+								local playerLevel = 10
+					
+								if type(getupvalues) == 'nil' then
+									if client.PlayerGui:FindFirstChild('MainUI') and client.PlayerGui.MainUI:FindFirstChild('InfoFrame') and client.PlayerGui.MainUI.InfoFrame:FindFirstChild('LevelFrame') and client.PlayerGui.MainUI.InfoFrame.LevelFrame:FindFirstChild('LevelText') then
+										playerLevel = tonumber(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text)
+									else
+										client:Kick('Executor not supported. Please use a different executor like Electron or Valyse.')
+									end
+								else
+									local uiController = require(client.PlayerScripts.KnitLoader.Controllers.UIController)
+									playerLevel = tonumber((getupvalues(uiController.LoadStats)[2].STATS.Level))
+								end
 								for _, quest in next, quests do
 									if questsInfo[table.find(quests, quest) - 1] ~= nil then
-										if questsInfo[table.find(quests, quest) - 1][2] < tonumber(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text) and questsInfo[table.find(quests, quest) - 1][2] > highestLevel then
+										if questsInfo[table.find(quests, quest) - 1][2] < playerLevel and questsInfo[table.find(quests, quest) - 1][2] > highestLevel then
 											highestLevelQuest = quest
 											highestLevel = questsInfo[table.find(quests, quest) - 1][2]
 										end
@@ -257,9 +271,22 @@ do
 				if Options.TargetQuest.Value == 'Highest level possible quest' then
 					local highestLevelQuest = 'Thugs'
 					local highestLevel = questsInfo[table.find(quests, highestLevelQuest)][2]
+					local playerLevel = 10
+					
+					if type(getupvalues) == 'nil' then
+						if client.PlayerGui:FindFirstChild('MainUI') and client.PlayerGui.MainUI:FindFirstChild('InfoFrame') and client.PlayerGui.MainUI.InfoFrame:FindFirstChild('LevelFrame') and client.PlayerGui.MainUI.InfoFrame.LevelFrame:FindFirstChild('LevelText') then
+							playerLevel = tonumber(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text)
+						else
+							client:Kick('Executor not supported. Please use a different executor like Electron or Valyse.')
+						end
+					else
+						local uiController = require(client.PlayerScripts.KnitLoader.Controllers.UIController)
+						playerLevel = tonumber((getupvalues(uiController.LoadStats)[2].STATS.Level))
+					end
+
 					for _, quest in next, quests do
 						if questsInfo[table.find(quests, quest) - 1] ~= nil then
-							if questsInfo[table.find(quests, quest) - 1][2] < tonumber(client.PlayerGui.MainUI.InfoFrame.LevelFrame.LevelLabel.Text) and questsInfo[table.find(quests, quest) - 1][2] > highestLevel then
+							if questsInfo[table.find(quests, quest) - 1][2] < playerLevel and questsInfo[table.find(quests, quest) - 1][2] > highestLevel then
 								highestLevelQuest = quest
 								highestLevel = questsInfo[table.find(quests, quest) - 1][2]
 							end
