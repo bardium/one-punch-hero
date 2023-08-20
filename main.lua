@@ -1,7 +1,7 @@
 --[[
 CREDITS:
 UI Library: Inori & wally
-Script: goosebetter
+Script: bardium
 ]]
 
 repeat
