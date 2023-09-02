@@ -1,7 +1,7 @@
 --[[
 CREDITS:
 UI Library: Inori & wally
-Script: bardium
+Script: goosebetter
 ]]
 
 repeat
@@ -20,7 +20,6 @@ local httpService = game:GetService('HttpService')
 
 local runService = game:GetService('RunService')
 local repStorage = game:GetService('ReplicatedStorage')
-local tpService = game:GetService('TeleportService')
 local virtualInputManager = game:GetService('VirtualInputManager')
 
 local knitServices, mobs, knitShared
@@ -518,15 +517,6 @@ Groups.Main:AddDivider()
 local guiNames = {}
 if client:FindFirstChild('PlayerGui') and client.PlayerGui:FindFirstChild('MainUI') and client.PlayerGui.MainUI:FindFirstChild('UIs') then
 	guiNames = client.PlayerGui.MainUI.UIs:GetChildren()
-	table.sort(guiNames, function(guiName1, guiName2)
-		if guiName1:IsA('Frame') and guiName2:IsA('ImageLabel') then
-			return tostring(guiName1) > tostring(guiName2)
-		end
-		if guiName1:IsA('ImageLabel') and guiName2:IsA('Frame') then
-			return tostring(guiName1) < tostring(guiName2)
-		end
-		return tostring(guiName1) < tostring(guiName2)
-	end)
 	for i, v in next, guiNames do
 		guiNames[i] = v.Name
 	end
@@ -563,7 +553,7 @@ Groups.Main:AddDropdown('HideGui', {
 
 Groups.Credits = Tabs.UISettings:AddRightGroupbox('Credits')
 
-addRichText(Groups.Credits:AddLabel('<font color="#0bff7e">bardium</font> - script'))
+addRichText(Groups.Credits:AddLabel('<font color="#0bff7e">Goose Better</font> - script'))
 addRichText(Groups.Credits:AddLabel('<font color="#3da5ff">wally & Inori</font> - ui library'))
 
 Groups.UISettings = Tabs.UISettings:AddRightGroupbox('UI Settings')
@@ -575,11 +565,6 @@ Groups.UISettings:AddButton('Copy Discord', function()
 		UI:Notify('Successfully copied discord link to your clipboard!', 5)
 	end
 end)
-if game.PlaceId ~= 14136710162 and game.PlaceId ~= 12826178482 then
-	Groups.UISettings:AddButton('Return To Lobby', function()
-		tpService:Teleport(12826178482, client)
-	end)
-end
 
 Groups.UISettings:AddLabel('Menu toggle'):AddKeyPicker('MenuToggle', { Default = 'Delete', NoUI = true })
 
